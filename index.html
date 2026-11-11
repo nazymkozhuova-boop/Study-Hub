@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Study Hub — Teachers and Study Groups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--side:#c9ddf4;--head:#cadff5;--bg:#dde3f1;--card:#fff;--inner:#e9f0fa;--inner-line:#c3d4ec;--ink:#243247;--mute:#5d6b80;--line:#d3dbe9;--acc:#7a9fd8;--star:#d9730d;--err:#b3341f;color-scheme:light}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,"Segoe UI",system-ui,sans-serif}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid #3b6fc4;outline-offset:2px}
+svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* login */
+#login{min-height:100%;display:grid;place-items:center;padding:20px;background:var(--head)}
+.lcard{background:var(--card);border-radius:20px;padding:32px;width:min(400px,100%);box-shadow:0 8px 30px rgba(36,50,71,.12)}
+.logo{font-style:italic;font-weight:700;font-size:1.9rem;margin:0 0 4px}
+.lcard p{margin:0 0 18px;color:var(--mute)}
+label{display:block;font-size:.85rem;font-weight:600;color:var(--mute);margin:12px 0 4px}
+.lcard input,dialog input,dialog select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.primary{width:100%;margin-top:18px;padding:11px;border:0;border-radius:10px;background:#3b6fc4;color:#fff;font-weight:600;cursor:pointer}
+.lrow{display:flex;gap:8px;margin-top:10px}
+.lrow button,.link{flex:1;padding:9px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-weight:500}
+.msg{margin-top:14px;font-size:.9rem;color:var(--mute)}
+.msg.err{color:var(--err)}
+
+/* app shell */
+#app{display:grid;grid-template-columns:148px 1fr;grid-template-rows:85px 1fr;height:100%}
+aside{grid-row:1/3;background:var(--side);border-right:1px solid #b5cae6;display:flex;flex-direction:column;align-items:center;gap:22px;padding-top:36px}
+.nav{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;font-size:.8rem;font-weight:500;width:130px}
+.nav span.ic{width:60px;height:60px;border-radius:16px;background:#fff;display:grid;place-items:center;font-size:26px;border:1px solid transparent}
+.nav[aria-current=page] span.ic{background:#aac4ee;border-color:#9ab7e6}
+header{grid-column:2;background:var(--head);border-bottom:1px solid #b5cae6;display:flex;align-items:center;gap:24px;padding:0 50px}
+header h1{margin:0;font-size:2rem;font-style:italic;font-weight:700;cursor:pointer;white-space:nowrap}
+.search{flex:1;max-width:750px;margin:0 auto;display:flex;align-items:center;gap:10px;background:#fff;border-radius:999px;padding:0 18px;height:46px;border:1px solid #bcd0ec}
+.search input{flex:1;border:0;outline:0;background:none;min-width:0}
+.search button{background:none;border:0;cursor:pointer;font-size:18px;display:grid;place-items:center}
+.tools{display:flex;align-items:center;gap:18px;font-size:24px;position:relative}
+.avatar{width:46px;height:46px;border-radius:50%;background:#fff;border:0;display:grid;place-items:center;cursor:pointer;font-size:22px}
+.menu{position:absolute;right:0;top:56px;background:#fff;border-radius:12px;padding:12px;box-shadow:0 6px 24px rgba(36,50,71,.2);font-size:.9rem;min-width:220px;z-index:5}
+.menu b{display:block;word-break:break-all;margin-bottom:8px}
+main{grid-column:2;overflow:auto;padding:38px 50px 40px}
+main h2{margin:0 0 22px;font-size:1.6rem}
+
+/* dashboard */
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:34px;height:calc(100vh - 85px - 78px)}
+.panel{background:var(--card);border:1px solid #c8d6ec;border-radius:20px;padding:24px 8px 0 26px;display:flex;flex-direction:column;min-height:0}
+.panel h3{margin:0 0 20px;font-size:1.45rem}
+.phead{display:flex;justify-content:space-between;color:var(--mute);font-weight:500;font-size:.93rem;margin-bottom:22px;padding-right:18px}
+.phead button{background:none;border:0;cursor:pointer;color:var(--mute);font-weight:600}
+.scroll{overflow-y:auto;padding:0 12px 20px 0;display:flex;flex-direction:column;gap:16px}
+.item{background:var(--inner);border:1px solid var(--inner-line);border-radius:16px;padding:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:26px}
+.grid .item{background:#fff;border-color:#d9e1ef}
+.top{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.who{display:flex;align-items:center;gap:12px;font-size:1.1rem;font-weight:500}
+.pic{width:40px;height:40px;border-radius:50%;background:#7c9fd8;color:#fff;display:grid;place-items:center;font-size:20px}
+.star{color:var(--star);font-weight:600;font-size:.9rem;white-space:nowrap}
+.t{font-size:1.1rem;font-weight:500;margin:0 0 10px}
+.meta{color:var(--mute);font-size:.93rem;margin:4px 0}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px dashed #b9c8de;margin-top:14px;padding-top:12px;color:var(--mute);font-size:.85rem}
+.foot.r{justify-content:flex-end}
+.btn{border:1px solid #cfd8e6;background:#fff;border-radius:8px;padding:7px 18px;font-weight:600;font-size:.9rem;cursor:pointer;color:var(--ink);text-decoration:none;display:inline-block}
+.btn[aria-disabled=true]{opacity:.45;pointer-events:none}
+.empty{color:var(--mute);padding:20px 0}
+dialog{border:0;border-radius:18px;padding:24px;width:min(420px,94vw)}
+dialog::backdrop{background:rgba(20,30,45,.45)}
+dialog h3{margin:0 0 6px}
+.row{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#243247;color:#fff;padding:10px 18px;border-radius:10px;display:none;z-index:10;max-width:90vw}
+
+@media (max-width:900px){
+  #app{grid-template-columns:1fr;grid-template-rows:70px 1fr 74px}
+  aside{grid-row:3;grid-column:1;flex-direction:row;justify-content:space-around;padding:6px 0;gap:0;border-right:0;border-top:1px solid #b5cae6}
+  .nav{width:auto;font-size:.7rem}.nav span.ic{width:40px;height:40px;font-size:20px;border-radius:12px}
+  header{grid-column:1;padding:0 14px;gap:10px}header h1{font-size:1.2rem}.tools .deco{display:none}
+  main{grid-column:1;padding:20px 14px}
+  .cols{grid-template-columns:1fr;height:auto}.panel{max-height:520px}
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <aside id="side"></aside>
+  <header>
+    <h1 id="home">Study Hub</h1>
+    <div class="search" role="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+      <input id="q" type="text" placeholder="Search tutors, projects, or study groups..." aria-label="Search">
+      <button id="qx" aria-label="Clear search"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="tools">
+      <svg class="deco" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg>
+      <svg class="deco" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      <button class="avatar" id="avatar" aria-label="About the project"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5"/></svg></button>
+      <div class="menu" id="menu" hidden><b>Public demo</b></div>
+    </div>
+  </header>
+  <main id="main"></main>
+</div>
+
+<div id="toast" role="status"></div>
+
+<script>
+/* Public (publishable) key — safe in the browser; data is protected by RLS policies. */
+const SUPABASE_URL = "https://eloocjrunthetsuzeuhz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_YvEP_8jX4BDqANnSAEuTSg_QfgpYE7V";
+
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const IC = {
+  dashboard: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  mentorship: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.3 3-5 7-5s7 1.7 7 5z"/>',
+  projects: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>',
+  groups: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 15c3 0 5 1.7 5 4.5"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M5 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5"/>'
+};
+const svg = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
+const NAV = [["dashboard", "Dashboard"], ["mentorship", "Peer mentorship"], ["projects", "Project partner"], ["groups", "Study buddy"]];
+
+let db, view = "dashboard", data = { Users: [], Courses: [], Projects: [], study_groups: [] };
+
+/* ---------- helpers ---------- */
+function toast(t) { const e = $("#toast"); e.textContent = t; e.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => e.style.display = "none", 3500); }
+const fullName = u => [u.First_name, u.Last_name].filter(Boolean).join(" ") || "User " + u.User_id;
+const byId = (list, pk, id) => list.find(r => r[pk] === id);
+const isTutor = u => /teacher|учител|tutor|mentor/i.test(u.Role_type || "");
+const match = (o, keys) => { const q = $("#q").value.trim().toLowerCase(); return !q || keys.some(k => String(o[k] ?? "").toLowerCase().includes(q)); };
+const ratingTxt = r => r === null || r === undefined ? "" : `★ ${r}/5.0`;
+const mail = (to, subj) => to ? `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subj)}` : "#";
+
+$("#avatar").onclick = () => { $("#menu").hidden = !$("#menu").hidden; };
+
+async function showApp() {
+  $("#menu").hidden = true;
+  $("#main").innerHTML = '<p class="empty">Loading…</p>';
+  const names = Object.keys(data);
+  const results = await Promise.all(names.map(name => db.from(name).select("*")));
+  results.forEach((result, index) => {
+    if (result.error) { data[names[index]] = []; toast(`Could not load ${names[index]}.`); }
+    else data[names[index]] = result.data;
+  });
+  render();
+}
+
+/* ---------- views ---------- */
+function renderNav() {
+  $("#side").innerHTML = NAV.map(([k, l]) => `<button class="nav" data-go="${k}" ${k === view ? 'aria-current="page"' : ""}><span class="ic">${svg(k)}</span>${l}</button>`).join("");
+}
+
+const tutorMini = u => `<div class="item"><div class="top"><div class="who"><span class="pic">${svg("user")}</span>${esc(fullName(u))}</div><span class="star">${ratingTxt(u.Rating)}</span></div>
+  <div class="meta">Role: ${esc(u.Role_type || "—")}</div>
+  <div class="foot r"><a class="btn" aria-disabled="${!u.Email}" href="${mail(u.Email, "Mentorship request")}">Contact</a></div></div>`;
+const tutorCard = u => `<div class="item"><div class="top"><div class="who"><span class="pic">${svg("user")}</span>${esc(fullName(u))}</div><span class="star">${ratingTxt(u.Rating)}</span></div>
+  <div class="meta">Role: ${esc(u.Role_type || "—")}</div>
+  <div class="foot r"><a class="btn" aria-disabled="${!u.Email}" href="${mail(u.Email, "Mentorship request")}">Contact</a></div></div>`;
+
+const creatorMail = p => mail(byId(data.Users, "User_id", p.creator_id)?.Email, `Project application: ${p.project_title || ""}`);
+const projMini = p => `<div class="item"><p class="t">${esc(p.project_title)}</p><div class="meta">Skills: ${esc(p.required_skills || "—")}</div>
+  <div class="foot"><span>Max: ${esc(p.max_members ?? "—")} members</span><a class="btn" aria-disabled="${creatorMail(p) === "#"}" href="${creatorMail(p)}">Apply</a></div></div>`;
+const projCard = p => `<div class="item"><p class="t">${esc(p.project_title)}</p><div class="meta">Required Skills: ${esc(p.required_skills || "—")}</div><div class="meta">Status: ${esc(p.status || "—")}</div>
+  <div class="foot"><span>Max Members: ${esc(p.max_members ?? "—")}</span><a class="btn" aria-disabled="${creatorMail(p) === "#"}" href="${creatorMail(p)}">Apply Role</a></div></div>`;
+
+const orgMail = g => mail(byId(data.Users, "User_id", g.organizer_id)?.Email, "Join study group");
+const groupCard = g => `<div class="item"><p class="t">Course ID: ${esc(g.course_id ?? "—")}</p><div class="meta">Venue: ${esc(g.venue || "—")}</div><div class="meta">Time: ${esc(g.meeting_time || "—")}</div>
+  <div class="foot"><span>Capacity: ${esc(g.capacity ?? "—")}</span><a class="btn" aria-disabled="${orgMail(g) === "#"}" href="${orgMail(g)}">Join</a></div></div>`;
+
+const none = t => `<p class="empty">${t}</p>`;
+const lists = () => ({
+  tutors: data.Users.filter(isTutor).filter(u => match(u, ["First_name", "Last_name", "Email", "Role_type"])),
+  projects: data.Projects.filter(p => match(p, ["project_title", "required_skills", "status"])),
+  groups: data.study_groups.filter(g => match(g, ["venue", "meeting_time", "course_id"]))
+});
+
+function render() {
+  renderNav();
+  const items = lists(), main = $("#main");
+  if (view === "mentorship") main.innerHTML = `<h2>Peer Mentorship Hub - Available Tutors &amp; Senior Mentors</h2><div class="grid">${items.tutors.map(tutorCard).join("") || none("No tutors found.")}</div>`;
+  else if (view === "projects") main.innerHTML = `<h2>Project Partner Matchmaker - All Active Projects</h2><div class="grid">${items.projects.map(projCard).join("") || none("No projects found.")}</div>`;
+  else if (view === "groups") main.innerHTML = `<h2>Study Buddy &amp; Party Finder - All Study Sessions</h2><div class="grid">${items.groups.map(groupCard).join("") || none("No study groups found.")}</div>`;
+  else main.innerHTML = `<div class="cols">
+    <section class="panel"><h3>Mentorship hub</h3><div class="phead"><span>Find Tutors &amp; Mentors</span><button data-go="mentorship">View all</button></div><div class="scroll">${items.tutors.map(tutorMini).join("") || none("No tutors found.")}</div></section>
+    <section class="panel"><h3>Project Partner Matchmaker</h3><div class="phead"><span>Find teammates</span><button data-go="projects">View all</button></div><div class="scroll">${items.projects.map(projMini).join("") || none("No projects found.")}</div></section>
+    <section class="panel"><h3>Study buddy&amp;party</h3><div class="phead"><span>Join study groups</span><button data-go="groups">View all</button></div><div class="scroll">${items.groups.map(groupCard).join("") || none("No study groups found.")}</div></section></div>`;
+}
+
+document.addEventListener("click", e => {
+  const g = e.target.closest("[data-go]"); if (g) { view = g.dataset.go; render(); return; }
+  if (!e.target.closest(".tools")) $("#menu").hidden = true;
+});
+$("#home").onclick = () => { view = "dashboard"; render(); };
+$("#q").oninput = render;
+$("#qx").onclick = () => { $("#q").value = ""; render(); };
+
+/* ---------- start ---------- */
+if (!window.supabase) { document.body.innerHTML = "<p style='padding:20px'>Could not load Supabase library.</p>"; }
+else {
+  db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+  showApp();
+}
+</script>
+</body>
+</html>
